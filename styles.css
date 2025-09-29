@@ -1,0 +1,60 @@
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to right, #1e3c72, #2a5298);
+  color: white;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+}
+h1 { font-size: 2.5em; margin-bottom: 20px; }
+#connect-wallet {
+  background: #00d2ff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1.2em;
+}
+#connect-wallet:hover { background: #00b0d8; }
+#wallet-address { margin: 10px 0; font-size: 1em; }
+.contract-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  padding: 20px;
+}
+.contract-card {
+  background: #4facfe;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.contract-card h3 { margin: 0 0 10px; font-size: 1.2em; }
+.contract-card button {
+  background: #00d2ff;
+  border: none;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.contract-card:hover { transform: scale(1.05); transition: 0.2s; }
+#form-modal {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  color: black;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+#contract-form input, #contract-form button {
+  display: block;
+  margin: 10px auto;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+#contract-form button { background: #00d2ff; border: none; cursor: pointer; }
+#contract-form button:hover { background: #00b0d8; }
