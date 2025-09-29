@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract SimpleStaking {
+    mapping(address => uint) public balances;
+
+    function stake() external payable {
+        require(msg.value > 0, "no ETH sent");
+        balances[msg.sender] += msg.value;
+    }
+
+    function unstake(uint amount) external {
+        require(balances[msg.sender] >= amount, "not enough staked");
+        balances[msg.sender] -= amount;
+        payable(msg.sender).transfer(amount);
+    }
+
+    function balanceOf(address user) external view returns (uint) {
+        return balances[user];
+    }
+}
