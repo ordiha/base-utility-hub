@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract Faucet {
+    mapping(address => uint256) public lastRequest;
+    uint256 public dripAmount = 1 ether;
+    uint256 public cooldown = 1 minutes;
+
+    function requestTokens() external {
+        require(
+            block.timestamp >= lastRequest[msg.sender] + cooldown,
+            "Wait cooldown"
+        );
+        require(address(this).balance >= dripAmount, "Empty faucet");
+        lastRequest[msg.sender] = block.timestamp;
+        payable(msg.sender).transfer(dripAmount);
+    }
+
+    function fund() external payable {}
+}
