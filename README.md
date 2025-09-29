@@ -8,4 +8,16 @@ https://basescan.org/address/0xa9749370eee8b8a07ea6b9dee9613465706322af#code
 
 
 Raffle:0x2fc19C9cD545EF178B30A41D17516382133E6f88
+
 https://basescan.org/address/0x2fc19c9cd545ef178b30a41d17516382133e6f88#code
+
+DeadMansSwitch: 0x34696e5CfC8D02376fF68CA2cDD55Fcb7ac8062A
+https://basescan.org/address/0x34696e5cfc8d02376ff68ca2cdd55fcb7ac8062a#code
+
+MultiSig:  0xE2Da7787FA45E95f2A8B5aF907Df2601d73cC865
+https://basescan.org/address/0xe2da7787fa45e95f2a8b5af907df2601d73cc865#code
+
+Staking: 0x44976C5BEFf3974d5cbF76eFb523B6EE028bbDA0
+https://basescan.org/address/0x44976c5beff3974d5cbf76efb523b6ee028bbda0#code
+
+
