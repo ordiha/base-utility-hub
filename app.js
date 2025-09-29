@@ -1,6 +1,6 @@
 const provider = new WalletConnect.UniversalProvider({
   projectId: "28f3dd90094536ee0e4ae65cad0c4de2", // Replace with your WalletConnect projectId from cloud.walletconnect.com
-  metadata: { name: "Base Utility Hub", description: "Utility DApp on Base", url: window.location.href, icons: [] }
+  metadata: { name: "Base Utility Hub", description: "Utility DApp on Base", url: window.location.origin, icons: [] }
 });
 
 const contracts = {
@@ -56,17 +56,30 @@ const contracts = {
 
 let ethersProvider;
 
-document.getElementById("connect-wallet").onclick = async () => {
+async function initWalletConnect() {
   try {
-    await provider.connect({ chains: [8453] });
+    await provider.init();
+    await provider.connect({
+      chains: [8453],
+      optionalNamespaces: {
+        eip155: {
+          chains: ["eip155:8453"],
+          methods: ["eth_sendTransaction", "personal_sign"],
+          events: ["chainChanged", "accountsChanged"]
+        }
+      }
+    });
     ethersProvider = new ethers.providers.Web3Provider(provider);
     const accounts = await ethersProvider.listAccounts();
     document.getElementById("connect-wallet").innerText = "Connected";
     document.getElementById("wallet-address").innerText = `Wallet: ${accounts[0]}`;
   } catch (error) {
+    console.error("WalletConnect error:", error);
     alert("Connection failed: " + error.message);
   }
-};
+}
+
+document.getElementById("connect-wallet").onclick = initWalletConnect;
 
 function showForm(contractName, address) {
   if (!ethersProvider) return alert("Connect wallet first!");
@@ -177,6 +190,7 @@ async function callContract(contractName) {
     alert("Transaction successful!");
     document.getElementById("form-modal").style.display = "none";
   } catch (error) {
+    console.error("Transaction error:", error);
     alert("Transaction failed: " + error.message);
   }
 }
