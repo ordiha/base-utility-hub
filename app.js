@@ -1,5 +1,7 @@
-const provider = new WalletConnect.UniversalProvider({
-  projectId: "28f3dd90094536ee0e4ae65cad0c4de2", // Replace with your WalletConnect projectId from cloud.walletconnect.com
+const web3Modal = new Web3Modal.Web3Modal({
+  projectId: "28f3dd90094536ee0e4ae65cad0c4de2",
+  walletConnectVersion: 2,
+  chains: [{ chainId: 8453, chainName: "Base", currency: "ETH", rpcUrl: "https://mainnet.base.org" }],
   metadata: { name: "Base Utility Hub", description: "Utility DApp on Base", url: window.location.origin, icons: [] }
 });
 
@@ -58,17 +60,7 @@ let ethersProvider;
 
 async function initWalletConnect() {
   try {
-    await provider.init();
-    await provider.connect({
-      chains: [8453],
-      optionalNamespaces: {
-        eip155: {
-          chains: ["eip155:8453"],
-          methods: ["eth_sendTransaction", "personal_sign"],
-          events: ["chainChanged", "accountsChanged"]
-        }
-      }
-    });
+    const provider = await web3Modal.connect();
     ethersProvider = new ethers.providers.Web3Provider(provider);
     const accounts = await ethersProvider.listAccounts();
     document.getElementById("connect-wallet").innerText = "Connected";
