@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IERC20 {
+    function transferFrom(address, address, uint256) external returns (bool);
+    function transfer(address, uint256) external returns (bool);
+}
+
+contract SimpleDEX {
+    IERC20 public token;
+    uint256 public rate; // tokens per ETH
+
+    constructor(IERC20 _token, uint256 _rate) {
+        token = _token;
+        rate = _rate;
+    }
+
+    function buy() external payable {
+        uint256 amount = msg.value * rate;
+        token.transfer(msg.sender, amount);
+    }
+
+    function sell(uint256 amount) external {
+        uint256 ethValue = amount / rate;
+        token.transferFrom(msg.sender, address(this), amount);
+        payable(msg.sender).transfer(ethValue);
+    }
+
+    receive() external payable {}
+}
