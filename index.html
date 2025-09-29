@@ -10,23 +10,27 @@
   <h1>Base Utility Hub</h1>
   <button id="connect-wallet">Connect Wallet</button>
   <div id="wallet-address"></div>
+
   <div class="contract-grid">
-    <div class="contract-card"><h3>TipJar</h3><button onclick="showForm('TipJar', '0x3A683D04B4ebA7a123699b0De74B0f1cF7c909Be')">Send Tip</button></div>
-    <div class="contract-card"><h3>Faucet</h3><button onclick="showForm('Faucet', '0xa9749370eeE8b8a07ea6B9dEE9613465706322aF')">Claim</button></div>
-    <div class="contract-card"><h3>Raffle</h3><button onclick="showForm('Raffle', '0x2fc19C9cD545EF178B30A41D17516382133E6f88')">Enter Raffle</button></div>
-    <div class="contract-card"><h3>DeadMansSwitch</h3><button onclick="showForm('DeadMansSwitch', '0x34696e5CfC8D02376fF68CA2cDD55Fcb7ac8062A')">Set Beneficiary</button></div>
-    <div class="contract-card"><h3>MultiSig</h3><button onclick="showForm('MultiSig', '0xE2Da7787FA45E95f2A8B5aF907Df2601d73cC865')">Submit Tx</button></div>
-    <div class="contract-card"><h3>Staking</h3><button onclick="showForm('Staking', '0x44976C5BEFf3974d5cbF76eFb523B6EE028bbDA0')">Stake</button></div>
-    <div class="contract-card"><h3>Vault</h3><button onclick="showForm('Vault', '0xE8C08F76961A7c32B27515FfcBb1b2f631be6B3c')">Deposit</button></div>
-    <div class="contract-card"><h3>Auction</h3><button onclick="showForm('Auction', '0x449311E71bC911e30aE528d54AD379f91c0D7b16')">Bid</button></div>
-    <div class="contract-card"><h3>Splitter</h3><button onclick="showForm('Splitter', '0xA9849750d46702Dfb44599e1D6a8747D7E67deAE')">Split</button></div>
-    <div class="contract-card"><h3>SimpleDEX</h3><button onclick="showForm('SimpleDEX', '0xD9B49a740C9B43c58da671183d268625Cc88997A')">Swap</button></div>
-    <div class="contract-card"><h3>TimelockVault</h3><button onclick="showForm('TimelockVault', '0xF8EaA1664406Ae596cFc3559FeF58c9760e0Ed35')">Lock</button></div>
-    <div class="contract-card"><h3>BatchSender</h3><button onclick="showForm('BatchSender', '0x07b780Fab0CaDC91c3B788C120F3A3374bCca431')">Batch Send</button></div>
+    <div class="contract-card"><h3>TipJar</h3><button onclick="showForm('TipJar')">Send Tip</button></div>
+    <div class="contract-card"><h3>Faucet</h3><button onclick="showForm('Faucet')">Claim</button></div>
+    <div class="contract-card"><h3>Raffle</h3><button onclick="showForm('Raffle')">Enter Raffle</button></div>
+    <div class="contract-card"><h3>DeadMansSwitch</h3><button onclick="showForm('DeadMansSwitch')">Set Beneficiary</button></div>
+    <div class="contract-card"><h3>MultiSig</h3><button onclick="showForm('MultiSig')">Submit Tx</button></div>
+    <div class="contract-card"><h3>Staking</h3><button onclick="showForm('Staking')">Stake</button></div>
+    <div class="contract-card"><h3>Vault</h3><button onclick="showForm('Vault')">Deposit</button></div>
+    <div class="contract-card"><h3>Auction</h3><button onclick="showForm('Auction')">Bid</button></div>
+    <div class="contract-card"><h3>Splitter</h3><button onclick="showForm('Splitter')">Split</button></div>
+    <div class="contract-card"><h3>SimpleDEX</h3><button onclick="showForm('SimpleDEX')">Swap</button></div>
+    <div class="contract-card"><h3>TimelockVault</h3><button onclick="showForm('TimelockVault')">Lock</button></div>
+    <div class="contract-card"><h3>BatchSender</h3><button onclick="showForm('BatchSender')">Batch Send</button></div>
   </div>
+
   <div id="form-modal" style="display:none;">
     <form id="contract-form"></form>
   </div>
+
+  <!-- ✅ Ethers + Web3Modal v2 -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://unpkg.com/@walletconnect/web3modal@2.6.2/dist/index.umd.js"></script>
   <script src="app.js"></script>
