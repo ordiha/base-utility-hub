@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract MultiSig {
+    address[] public owners;
+    uint256 public required;
+    mapping(uint256 => mapping(address => bool)) public approvals;
+    struct Tx {
+        address to;
+        uint256 value;
+        bool executed;
+    }
+    Tx[] public txs;
+
+    constructor(address[] memory _owners, uint256 _required) {
+        owners = _owners;
+        required = _required;
+    }
+
+    modifier onlyOwner() {
+        bool found = false;
+        for (uint256 i = 0; i < owners.length; i++) {
+            if (owners[i] == msg.sender) found = true;
+        }
+        require(found, "Not owner");
+        _;
+    }
+
+    function propose(address to, uint256 value) external onlyOwner {
+        txs.push(Tx(to, value, false));
+    }
+
+    function approve(uint256 txId) external onlyOwner {
+        approvals[txId][msg.sender] = true;
+    }
+
+    function execute(uint256 txId) external onlyOwner {
+        Tx storage t = txs[txId];
+        require(!t.executed, "Already executed");
+        uint256 count = 0;
+        for (uint256 i = 0; i < owners.length; i++) {
+            if (approvals[txId][owners[i]]) count++;
+        }
+        require(count >= required, "Not enough approvals");
+        t.executed = true;
+        payable(t.to).transfer(t.value);
+    }
+
+    receive() external payable {}
+}
