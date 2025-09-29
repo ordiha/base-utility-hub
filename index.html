@@ -1,38 +1,371 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Base Utility Hub</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Eth-Infinity-Playground — WalletConnect</title>
+<style>
+  :root{--bg1:#0f172a;--bg2:#0ea5e9;--card:rgba(255,255,255,0.06);}
+  body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,var(--bg1),#082032);color:#e6f7ff;}
+  header{padding:18px;text-align:center}
+  h1{margin:0 0 6px;font-size:1.6rem}
+  p.lead{margin:0 0 14px;opacity:0.9}
+  .topbar{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .btn{background:#06b6d4;border:none;padding:10px 14px;border-radius:10px;color:#042;cursor:pointer;font-weight:600}
+  .addr{font-family:monospace;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px}
+  main{max-width:1200px;margin:20px auto;padding:0 12px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.35)}
+  .card h3{margin:0 0 6px}
+  .small{font-size:12px;opacity:0.85;margin-bottom:8px}
+  .controls{display:flex;flex-direction:column;gap:8px}
+  input[type=text], input[type=number], textarea{width:100%;padding:8px;border-radius:8px;border:none;box-sizing:border-box}
+  .callBtn{background:#fb923c;border:none;padding:8px 10px;border-radius:8px;color:#fff;cursor:pointer}
+  .status{margin-top:8px;font-size:13px;color:#bfffcf;min-height:20px}
+  footer{padding:18px;text-align:center;opacity:0.85}
+  a.link{display:inline-block;margin-top:8px;color:#ffd; font-size:13px;text-decoration:none}
+  .hint{font-size:12px;opacity:0.8;margin-top:6px}
+</style>
 </head>
 <body>
-  <h1>Base Utility Hub</h1>
-  <button id="connect-wallet">Connect Wallet</button>
-  <div id="wallet-address"></div>
+  <header>
+    <h1>🌌 Eth-Infinity-Playground</h1>
+    <p class="lead">Interactive card grid — WalletConnect v2 + MetaMask. Click Connect, then choose a contract card to call functions.</p>
+    <div class="topbar">
+      <button id="btnConnect" class="btn">🔗 Connect Wallet</button>
+      <div id="addr" class="addr">Not connected</div>
+      <div id="chain" class="addr" style="display:none"></div>
+    </div>
+  </header>
 
-  <div class="contract-grid">
-    <div class="contract-card"><h3>TipJar</h3><button onclick="showForm('TipJar')">Send Tip</button></div>
-    <div class="contract-card"><h3>Faucet</h3><button onclick="showForm('Faucet')">Claim</button></div>
-    <div class="contract-card"><h3>Raffle</h3><button onclick="showForm('Raffle')">Enter Raffle</button></div>
-    <div class="contract-card"><h3>DeadMansSwitch</h3><button onclick="showForm('DeadMansSwitch')">Set Beneficiary</button></div>
-    <div class="contract-card"><h3>MultiSig</h3><button onclick="showForm('MultiSig')">Submit Tx</button></div>
-    <div class="contract-card"><h3>Staking</h3><button onclick="showForm('Staking')">Stake</button></div>
-    <div class="contract-card"><h3>Vault</h3><button onclick="showForm('Vault')">Deposit</button></div>
-    <div class="contract-card"><h3>Auction</h3><button onclick="showForm('Auction')">Bid</button></div>
-    <div class="contract-card"><h3>Splitter</h3><button onclick="showForm('Splitter')">Split</button></div>
-    <div class="contract-card"><h3>SimpleDEX</h3><button onclick="showForm('SimpleDEX')">Swap</button></div>
-    <div class="contract-card"><h3>TimelockVault</h3><button onclick="showForm('TimelockVault')">Lock</button></div>
-    <div class="contract-card"><h3>BatchSender</h3><button onclick="showForm('BatchSender')">Batch Send</button></div>
-  </div>
+  <main>
+    <div id="grid" class="grid"></div>
+    <div class="hint">Note: all ABIs are minimal examples (function signatures only). If a contract has a different signature, use BaseScan write page.</div>
+  </main>
 
-  <div id="form-modal" style="display:none;">
-    <form id="contract-form"></form>
-  </div>
+  <footer>
+    Repo: <code>Eth-infinity-playground</code> — Live front: <a class="link" href="https://ordiha.github.io/Eth-infinity-playground/" target="_blank">/Eth-infinity-playground/</a>
+  </footer>
 
-  <!-- ✅ Ethers + Web3Modal v2 -->
+  <!-- libraries -->
   <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
   <script src="https://unpkg.com/@walletconnect/web3modal@2.6.2/dist/index.umd.js"></script>
-  <script src="app.js"></script>
+
+<script>
+/* ===== CONFIG =====
+   Project id you gave for this repo
+*/
+const WC_PROJECT_ID = "a1172cd3024e252eb241f9ac3c9076fb";
+
+/* ===== CONTRACT LIST (name, category, address, functions) =====
+   I included the large set you provided across chats. Each contract lists the common functions we used previously.
+   If a function signature differs on-chain, call may revert — then use BaseScan Write page for that contract.
+*/
+const contracts = [
+  // NFTs (ERC721-like)
+  { name:"GiveawayNFT", category:"ERC721", address:"0xF3b6f93110e308Acc02f70E36F9F031731f7f5E7", funcs:[
+    { name:"balanceOf", type:"call", inputs:[{name:"owner",type:"address"}]},
+    { name:"giveawayMint", type:"tx", inputs:[{name:"recipients",type:"address[]"}], hint:"Enter addresses comma-separated" },
+    { name:"baseURI", type:"call", inputs:[] }
+  ]},
+  { name:"OpenMintNFT", category:"ERC721", address:"0x79f6e18a8376b02b35C1D5C02DA86Ec03cA6d57d", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"_text",type:"string"}] }
+  ]},
+  { name:"ColorNFT", category:"ERC721", address:"0x7e5b2523Da5D63e500b9b050f45f993b811c6548", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"color",type:"string"}] }
+  ]},
+  { name:"TimeNFT", category:"ERC721", address:"0x6A7b0FD9Ea1809a5F0F4369e191a0B021D11BCD5", funcs:[
+    { name:"mint", type:"tx", inputs:[] }
+  ]},
+  { name:"EvolvingNFT", category:"ERC721", address:"0xFAb4D080D6b1AF6d84685148f9D6a7195f86b829", funcs:[
+    { name:"evolve", type:"tx", inputs:[{name:"tokenId",type:"uint256"}] }
+  ]},
+  { name:"EmojiNFT", category:"ERC721", address:"0x2fdEf913F4a1bCD05ADA45F4556d54F6df5305e1", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"emoji",type:"string"}] }
+  ]},
+  { name:"FreeBadgeNFT", category:"ERC721", address:"0x2533d3769d333f96D446f9035d025cf986773D83", funcs:[
+    { name:"claim", type:"tx", inputs:[] }
+  ]},
+  { name:"MessageNFT", category:"ERC721", address:"0xAC3fDF094d4167D8238ba980F70792E681b487A5", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"message",type:"string"}] }
+  ]},
+
+  // Tokens (ERC20-like)
+  { name:"ProjectToken", category:"ERC20", address:"0x8A78A66E45dFb17A7d2C2f54c0c265d62336591F", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"BurnToken", category:"ERC20", address:"0xA94759CaeAD1b3b7bF5EAC55D70926b76d6F9788", funcs:[
+    { name:"burn", type:"tx", inputs:[{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"FaucetToken", category:"ERC20", address:"0x497C8C54B603b02Ab2a8f11387c5D6bEC19EE237", funcs:[
+    { name:"faucet", type:"tx", inputs:[] }
+  ]},
+  { name:"NameToken", category:"ERC20", address:"0x1da06bd89f7386E919934D396a18DfE123Ac2214", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"ArtToken", category:"ERC20", address:"0x791DCE76c244DBb72e99F5f87BD843fF229f8BdE", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"PraiseToken", category:"ERC20", address:"0xF98d56aCB775217409BA516c79ca5BAdf976125E", funcs:[
+    { name:"praise", type:"tx", inputs:[{name:"to",type:"address"},{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"MemoToken", category:"ERC20", address:"0xa4125F4dD0369Fa7b4153B6Fb26931d16Ac159A1", funcs:[
+    { name:"mint", type:"tx", inputs:[{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"KarmaToken", category:"ERC20", address:"0xF7147a1a15DaCe03308c57b6A8001a4E0dd5053a", funcs:[
+    { name:"reward", type:"tx", inputs:[{name:"to",type:"address"},{name:"amount",type:"uint256"}] }
+  ]},
+
+  // Utilities & Games (common calls)
+  { name:"DonationTracker2", category:"Utility", address:"0x9dDAf52D93FE53715dC510190b2DDD1d1CafA8fB", funcs:[
+    { name:"donate", type:"tx", inputs:[], payable:true },
+    { name:"contractBalance", type:"call", inputs:[] }
+  ]},
+  { name:"EscrowOpen", category:"Utility", address:"0x4e3DCAd4Cf1ac9cCdD93aC2b395C3fBA242c521b", funcs:[
+    { name:"deposit", type:"tx", inputs:[], payable:true },
+    { name:"release", type:"tx", inputs:[] }
+  ]},
+  { name:"CrowdfundingOpen", category:"Utility", address:"0x6d0615e1dd679314213D39D06E5175322fDcc346", funcs:[
+    { name:"contribute", type:"tx", inputs:[], payable:true },
+    { name:"raised", type:"call", inputs:[] }
+  ]},
+  { name:"Lottery", category:"Game", address:"0x2eDb3668A8c37a1b1D1934e4247da47FA2c73daf", funcs:[
+    { name:"buyTicket", type:"tx", inputs:[], payable:true },
+    { name:"getPlayers", type:"call", inputs:[] }
+  ]},
+  { name:"SavingsPool", category:"Utility", address:"0xa43BC9AAFb69608a6bF1C84CBA1258bBa53d9B5D", funcs:[
+    { name:"deposit", type:"tx", inputs:[], payable:true },
+    { name:"withdraw", type:"tx", inputs:[{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"TipPool", category:"Utility", address:"0x48FC372AB9A289b4B885cDa740790d177441FD9F", funcs:[
+    { name:"tip", type:"tx", inputs:[{name:"to",type:"address"},{name:"amount",type:"uint256"}], payable:true }
+  ]},
+  { name:"RandomPay", category:"Utility", address:"0x02c6F7CD3FC95c6895D1663FDF81882f680A43A8", funcs:[
+    { name:"deposit", type:"tx", inputs:[], payable:true }
+  ]},
+  { name:"VotingOpen", category:"Utility", address:"0x79e18a4e4f07b38E13E6E537C209CaEB78652531", funcs:[
+    { name:"vote", type:"tx", inputs:[{name:"proposalIndex",type:"uint256"}] },
+    { name:"winningProposal", type:"call", inputs:[] }
+  ]},
+  { name:"OpinionRegistry", category:"Utility", address:"0xE74706982Be1c7223E5855EA42DCF96F1104215B", funcs:[
+    { name:"addOpinion", type:"tx", inputs:[{name:"_text",type:"string"}] },
+    { name:"totalOpinions", type:"call", inputs:[] }
+  ]},
+  { name:"MessageBoardOpen", category:"Utility", address:"0xDDfc28B2C3B760b415465C60a0184e73fdd58f8c", funcs:[
+    { name:"postMessage", type:"tx", inputs:[{name:"_text",type:"string"}] },
+    { name:"totalMessages", type:"call", inputs:[] }
+  ]},
+  { name:"SurveyBoard", category:"Utility", address:"0x3fbf1Ec0B4794105480b946940c7DFF6704eF93f", funcs:[
+    { name:"submitAnswer", type:"tx", inputs:[{name:"choice",type:"uint256"}] }
+  ]},
+  { name:"ReputationPoints", category:"Utility", address:"0xF3Ca99eBB3309Cae06B6163a72801A7E236a531d", funcs:[
+    { name:"reward", type:"tx", inputs:[{name:"to",type:"address"},{name:"amount",type:"uint256"}] }
+  ]},
+  { name:"BadgeBoard", category:"Utility", address:"0x3977E74324a40Fc36E66bD2841Bf5083fedA5f29", funcs:[
+    { name:"giveBadge", type:"tx", inputs:[{name:"to",type:"address"},{name:"badge",type:"string"}] }
+  ]},
+  { name:"OpenPolls", category:"Utility", address:"0x427f7939832032FbF6D679E1B711d40b496BeFBb", funcs:[
+    { name:"createPoll", type:"tx", inputs:[{name:"question",type:"string"}] }
+  ]},
+  { name:"MemoryChain", category:"Utility", address:"0xE0Ac6DaFc6a2dcCF599502deC0CB4A8d12bCDDd2", funcs:[
+    { name:"addMemory", type:"tx", inputs:[{name:"_note",type:"string"}] }
+  ]},
+  { name:"GuessNumber", category:"Game", address:"0xe5c4636C0249312fda74492A1a68094C1c08dA54", funcs:[
+    { name:"guess", type:"tx", inputs:[{name:"_g",type:"uint256"}] }
+  ]},
+  { name:"RockPaperScissors", category:"Game", address:"0xDe214a923048a2F97bE6dcBe664fA7192a7E66E5", funcs:[
+    { name:"play", type:"tx", inputs:[{name:"move",type:"uint8"}] }
+  ]},
+  { name:"RandomArt", category:"ERC721", address:"0xC31D53E3ADb55Afb1734c0f8f01472dd660dd485", funcs:[
+    { name:"mint", type:"tx", inputs:[] }
+  ]},
+  { name:"CollectibleGame", category:"ERC721", address:"0xCdD6c5361327dD687a5007B3203ad7c28E9F6989", funcs:[
+    { name:"collect", type:"tx", inputs:[] }
+  ]},
+  { name:"Leaderboard", category:"Game", address:"0x6dd734e20db7Fa8aD6273D1cF2289569436c80dA", funcs:[
+    { name:"addScore", type:"tx", inputs:[{name:"score",type:"uint256"}] }
+  ]},
+  { name:"RouletteSpin", category:"Game", address:"0xB0f6210ed2B197d03435080B13514d0A5eF83e74", funcs:[
+    { name:"spin", type:"tx", inputs:[], payable:true }
+  ]},
+  { name:"RandomWords", category:"Utility", address:"0x8c50e96a9a269d8102A1ec3815849465cE49E7ea", funcs:[
+    { name:"requestRandom", type:"tx", inputs:[] }
+  ]},
+  // Additional contracts you later added:
+  { name:"SoulboundNFT", category:"ERC721", address:"0x2e47AbE368cC21d33005174FcF3eF6b72FF21D28", funcs:[ {name:"claim",type:"tx",inputs:[]} ]},
+  { name:"PixelArtNFT", category:"ERC721", address:"0x34D7857b4C843bDa08703d2B0BE9B4c163aE122a", funcs:[ {name:"mintPixel",type:"tx",inputs:[{name:"color",type:"string"}]} ]},
+  { name:"VoteToken", category:"ERC20", address:"0xccCE9A2549f17e35998956A4f23fd34E9A084665", funcs:[ {name:"vote",type:"tx",inputs:[{name:"proposal",type:"uint256"}]} ]},
+  { name:"QuestBoard", category:"Utility", address:"0x6dB4ACd14c8492c8e4Df051bDb05162734Fa13D3", funcs:[ {name:"completeQuest",type:"tx",inputs:[{name:"id",type:"uint256"}]} ]},
+  { name:"DailyReward", category:"Utility", address:"0x622AB99b5767D533221ed7Cd0424973069A504eE", funcs:[ {name:"claim",type:"tx",inputs:[]} ]},
+  { name:"ChainMessage", category:"Utility", address:"0x88a9dB30a1eC8f6713047C96ab205Fc9A938832C", funcs:[ {name:"post",type:"tx",inputs:[{name:"text",type:"string"}]} ]},
+  { name:"TicketNFT", category:"ERC721", address:"0x488D4d61e28FF44f7059CC176C81096Fb8BB4D55", funcs:[ {name:"claimTicket",type:"tx",inputs:[]} ]},
+  { name:"LuckyNumber", category:"Game", address:"0x7C958a5344482A698E77EE9b961285647C9961E1", funcs:[ {name:"play",type:"tx",inputs:[{name:"num",type:"uint256"}]} ]},
+  { name:"GiftNFT", category:"ERC721", address:"0x8E62324AC8DB7DfDa70AA1e2fC8F3BD11132C2c0", funcs:[ {name:"sendGift",type:"tx",inputs:[{name:"to",type:"address"}]} ]},
+  { name:"SimpleStable", category:"Finance", address:"0x022443D36300CE9EB9b8539619b3D16b0cdF9827", funcs:[ {name:"deposit",type:"tx",inputs:[],payable:true}, {name:"withdraw",type:"tx",inputs:[{name:"amount",type:"uint256"}]} ]},
+  { name:"KudosToken", category:"ERC20", address:"0x223412cEFFBfad0eEAc430635ef07A851990a18a", funcs:[ {name:"mint",type:"tx",inputs:[{name:"amount",type:"uint256"}]} ]}
+];
+
+/* ===== Internal state ===== */
+let web3Modal, provider, ethersProvider, signer, userAddress;
+
+/* ===== Web3Modal init ===== */
+function initWeb3Modal() {
+  web3Modal = new window.Web3Modal.Web3Modal({
+    projectId: WC_PROJECT_ID,
+    walletConnectVersion: 2,
+    themeMode: "dark",
+    chains: [{ chainId: 8453, rpc: "https://mainnet.base.org", name: "Base" }],
+  });
+}
+
+/* ===== UI build ===== */
+function makeABIFragment(func) {
+  // Build minimal ABI entry for ethers.Contract (function-only)
+  const inputs = (func.inputs||[]).map(i => ({ name:i.name, type:i.type }));
+  const stateMutability = func.payable ? "payable" : (func.type==="call" ? "view" : "nonpayable");
+  return {
+    name: func.name,
+    type: "function",
+    inputs,
+    stateMutability,
+    outputs: func.type==="call" ? [{ type: "string" }] : []
+  };
+}
+
+function renderGrid() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  contracts.forEach(c => {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `
+      <h3>${c.name}</h3>
+      <div class="small">${c.category}</div>
+      <div class="controls" id="controls-${c.name}"></div>
+      <a class="link" href="https://basescan.org/address/${c.address}#code" target="_blank">View on BaseScan</a>
+      <div class="status" id="status-${c.name}"></div>
+    `;
+    grid.appendChild(el);
+    buildControlsForContract(c);
+  });
+}
+
+function buildControlsForContract(c) {
+  const controls = document.getElementById(`controls-${c.name}`);
+  c.funcs.forEach(fn => {
+    const container = document.createElement("div");
+    container.style.marginTop = "8px";
+    // inputs
+    if ((fn.inputs||[]).length > 0) {
+      fn.inputs.forEach(inp => {
+        const placeholder = inp.type.includes("address[]") ? `${inp.name} (comma addresses)` :
+                             inp.type.includes("address") ? `${inp.name} (address)` :
+                             inp.type.includes("uint") ? `${inp.name} (number)` :
+                             `${inp.name} (${inp.type})`;
+        const input = document.createElement(inp.type.includes("uint") ? "input" : (inp.type==="string" ? "input" : "input"));
+        input.type = inp.type.includes("uint") ? "number" : "text";
+        input.id = `${c.name}_${fn.name}_${inp.name}`;
+        input.placeholder = placeholder;
+        container.appendChild(input);
+      });
+    } else if (fn.payable) {
+      // show amount input for payable functions
+      const amt = document.createElement("input");
+      amt.type = "number";
+      amt.step = "0.000000001";
+      amt.id = `${c.name}_${fn.name}_value`;
+      amt.placeholder = "ETH value (e.g. 0.001)";
+      container.appendChild(amt);
+    }
+    // button
+    const btn = document.createElement("button");
+    btn.className = "callBtn";
+    btn.innerText = fn.type==="call" ? `Call ${fn.name}` : `Send ${fn.name}`;
+    btn.onclick = () => invokeContractFunction(c, fn);
+    container.appendChild(btn);
+    controls.appendChild(container);
+  });
+}
+
+/* ===== Connect Wallet ===== */
+async function connectWallet() {
+  try {
+    provider = await web3Modal.connect();
+    ethersProvider = new ethers.providers.Web3Provider(provider, "any");
+    signer = ethersProvider.getSigner();
+    userAddress = await signer.getAddress();
+    document.getElementById("addr").innerText = `${userAddress}`;
+    document.getElementById("chain").style.display = "inline-block";
+    document.getElementById("chain").innerText = `Connected (Base)`;
+    // provider events
+    provider.on && provider.on("accountsChanged", (accs) => {
+      document.getElementById("addr").innerText = accs[0] || "Not connected";
+    });
+    provider.on && provider.on("chainChanged", () => window.location.reload());
+  } catch (e) {
+    console.error("connect error", e);
+    alert("Wallet connect failed: " + (e.message || e));
+  }
+}
+
+/* ===== Build minimal ABI & call / send ===== */
+async function invokeContractFunction(contractObj, fn) {
+  const statusEl = document.getElementById(`status-${contractObj.name}`);
+  statusEl.innerText = "Processing...";
+  try {
+    if (!signer) return alert("Connect wallet first!");
+    // build ABI (minimal)
+    const miniABI = [ makeABIFragment(fn) ];
+    const contract = new ethers.Contract(contractObj.address, miniABI, signer);
+
+    // prepare args
+    const args = (fn.inputs||[]).map(inp => {
+      const el = document.getElementById(`${contractObj.name}_${fn.name}_${inp.name}`);
+      let val = el ? el.value : undefined;
+      if (val === undefined || val === "") {
+        if (inp.type.endsWith("[]")) return [];
+        if (inp.type.startsWith("uint")) return 0;
+        return "";
+      }
+      if (inp.type.endsWith("[]")) {
+        // comma separated addresses or values
+        return val.split(",").map(v => v.trim());
+      }
+      if (inp.type === "address") return val.trim();
+      if (inp.type.startsWith("uint")) return ethers.BigNumber.from(val.toString());
+      return val;
+    });
+
+    // payable value?
+    let overrides = {};
+    if (fn.payable) {
+      const valEl = document.getElementById(`${contractObj.name}_${fn.name}_value`);
+      const v = valEl && valEl.value ? valEl.value : "0";
+      overrides = { value: ethers.utils.parseEther(v || "0") };
+    }
+
+    if (fn.type === "call") {
+      const res = await contract[fn.name](...args);
+      statusEl.innerText = `Result: ${String(res)}`;
+    } else {
+      // send tx
+      const tx = await contract[fn.name](...args, overrides);
+      statusEl.innerText = `Pending tx ${tx.hash}`;
+      await tx.wait();
+      statusEl.innerText = `Tx confirmed: ${tx.hash}`;
+    }
+  } catch (err) {
+    console.error(err);
+    const msg = err && err.error && err.error.message ? err.error.message : (err.message || String(err));
+    statusEl.innerText = `Error: ${msg}`;
+  }
+}
+
+/* ===== start ===== */
+initWeb3Modal();
+renderGrid();
+document.getElementById("btnConnect").onclick = connectWallet;
+
+</script>
 </body>
 </html>
