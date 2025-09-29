@@ -1,5 +1,5 @@
 const provider = new WalletConnect.UniversalProvider({
-  projectId: "YOUR_PROJECT_ID", // Replace with your WalletConnect projectId from cloud.walletconnect.com
+  projectId: "28f3dd90094536ee0e4ae65cad0c4de2", // Replace with your WalletConnect projectId from cloud.walletconnect.com
   metadata: { name: "Base Utility Hub", description: "Utility DApp on Base", url: window.location.href, icons: [] }
 });
 
