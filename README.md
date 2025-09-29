@@ -20,4 +20,8 @@ https://basescan.org/address/0xe2da7787fa45e95f2a8b5af907df2601d73cc865#code
 Staking: 0x44976C5BEFf3974d5cbF76eFb523B6EE028bbDA0
 https://basescan.org/address/0x44976c5beff3974d5cbf76efb523b6ee028bbda0#code
 
+Vault: 0xE8C08F76961A7c32B27515FfcBb1b2f631BE6B3c
+https://basescan.org/address/0xe8c08f76961a7c32b27515ffcbb1b2f631be6b3c#code
 
+Auction: 0x449311E71bC911e30aE528d54AD379f91c0D7b16
+https://basescan.org/address/0x449311e71bc911e30ae528d54ad379f91c0d7b16#code
