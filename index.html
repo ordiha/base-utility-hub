@@ -48,59 +48,30 @@
 <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
 
 <script>
-/*
-  Drop-in WalletConnect/Web3 front.
-  - Will use abis.js in repo if present (global "abis" or "abisObj"). Otherwise uses embedded fallbackContracts below.
-  - WalletConnect provider infuraId: tries legacy ID used earlier if none provided.
-*/
-const LEGACY_INFURA_ID = "5056a2b581e5962f9e3083d68053b5d8"; // used in working dapp before
+const LEGACY_INFURA_ID = "5056a2b581e5962f9e3083d68053b5d8";
 let web3, provider, accounts;
 
-// fallback contracts (minimal functions) — includes your main deployed addresses you provided
+/* ==== New Contracts ==== */
 const fallbackContracts = [
-  { name:"OpenMintNFT", addr:"0x79f6e18a8376b02b35C1D5C02DA86Ec03cA6d57d", funcs:[{name:"mint", inputs:[{name:"_text",type:"string"}], type:"tx"}] },
-  { name:"ColorNFT", addr:"0x7e5b2523Da5D63e500b9b050f45f993b811c6548", funcs:[{name:"mint", inputs:[{name:"color",type:"string"}], type:"tx"}] },
-  { name:"TimeNFT", addr:"0x6A7b0FD9Ea1809a5F0F4369e191a0B021D11BCD5", funcs:[{name:"mint", inputs:[], type:"tx"}] },
-  { name:"GiveawayNFT", addr:"0xF3b6f93110e308Acc02f70E36F9F031731f7f5E7", funcs:[{name:"giveawayMint", inputs:[{name:"recipients",type:"address[]"}],type:"tx"}] },
-  { name:"DonationTracker2", addr:"0x9dDAf52D93FE53715dC510190b2DDD1d1CafA8fB", funcs:[{name:"donate",inputs:[],type:"tx",payable:true},{name:"contractBalance",inputs:[],type:"call"}] },
-  { name:"Lottery", addr:"0x2eDb3668A8c37a1b1D1934e4247da47FA2c73daf", funcs:[{name:"buyTicket",inputs:[],type:"tx",payable:true}] },
-  { name:"OpinionRegistry", addr:"0xE74706982Be1c7223E5855EA42DCF96F1104215B", funcs:[{name:"addOpinion",inputs:[{name:"_text",type:"string"}],type:"tx"},{name:"totalOpinions",inputs:[],type:"call"}] },
-  { name:"GuessNumber", addr:"0xe5c4636C0249312fda74492A1a68094C1c08dA54", funcs:[{name:"guess",inputs:[{name:"_g",type:"uint256"}],type:"tx"}] }
-  // add more if you want — abis.js will override if present
+  { name:"TipJar", addr:"0x3A683D04B4ebA7a123699b0De74B0f1cF7c909Be", funcs:[{name:"tip",inputs:[],type:"tx",payable:true}] },
+  { name:"Faucet", addr:"0xa9749370eeE8b8a07ea6B9dEE9613465706322aF", funcs:[{name:"requestTokens",inputs:[],type:"tx"}] },
+  { name:"Raffle", addr:"0x2fc19C9cD545EF178B30A41D17516382133E6f88", funcs:[{name:"buyTicket",inputs:[],type:"tx",payable:true},{name:"drawWinner",inputs:[],type:"tx"}] },
+  { name:"DeadMansSwitch", addr:"0x34696e5CfC8D02376fF68CA2cDD55Fcb7ac8062A", funcs:[{name:"ping",inputs:[],type:"tx"},{name:"claim",inputs:[],type:"tx"}] },
+  { name:"MultiSig", addr:"0xE2Da7787FA45E95f2A8B5aF907Df2601d73cC865", funcs:[{name:"submitTransaction",inputs:[{name:"to",type:"address"},{name:"value",type:"uint256"},{name:"data",type:"bytes"}],type:"tx"}] },
+  { name:"Staking", addr:"0x44976C5BEFf3974d5cbF76eFb523B6EE028bbDA0", funcs:[{name:"stake",inputs:[],type:"tx",payable:true},{name:"withdraw",inputs:[{name:"amt",type:"uint256"}],type:"tx"}] },
+  { name:"Vault", addr:"0xE8C08F76961A7c32B27515FfcBb1b2f631BE6B3c", funcs:[{name:"deposit",inputs:[],type:"tx",payable:true},{name:"withdraw",inputs:[{name:"amt",type:"uint256"}],type:"tx"}] },
+  { name:"Auction", addr:"0x449311E71bC911e30aE528d54AD379f91c0D7b16", funcs:[{name:"placeBid",inputs:[],type:"tx",payable:true},{name:"endAuction",inputs:[],type:"tx"}] },
+  { name:"Splitter", addr:"0xA9849750d46702Dfb44599e1D6a8747D7E67deAE", funcs:[{name:"splitFunds",inputs:[{name:"recipients",type:"address[]"}],type:"tx",payable:true}] },
+  { name:"SimpleDEX", addr:"0xD9B49a740C9B43c58da671183d268625Cc88997A", funcs:[{name:"buy",inputs:[{name:"token",type:"address"}],type:"tx",payable:true},{name:"sell",inputs:[{name:"token",type:"address"},{name:"amt",type:"uint256"}],type:"tx"}] },
+  { name:"TimelockVault", addr:"0xF8EaA1664406Ae596cFc3559FeF58c9760e0Ed35", funcs:[{name:"deposit",inputs:[],type:"tx",payable:true},{name:"withdraw",inputs:[],type:"tx"}] },
+  { name:"BatchSender", addr:"0x07b780Fab0CaDC91c3B788C120F3A3374bCCA431", funcs:[{name:"batchSend",inputs:[{name:"recipients",type:"address[]"}],type:"tx",payable:true}] }
 ];
-
-// read abis.js if present (global "abis" object). This file will accept abis variable with structure: {Name:{address:"0x...",abi:[...]}}
-// Many of your repos used an "abis" object. We'll try to convert that into our expected list.
-function loadContractsFromAbisGlobal() {
-  try {
-    if (typeof abis !== "undefined" && abis && Object.keys(abis).length>0) {
-      const list = [];
-      for (const [k,v] of Object.entries(abis)) {
-        const funcs = [];
-        if (Array.isArray(v.abi)) {
-          v.abi.forEach(item => {
-            if (item.type === "function") {
-              const inputs = (item.inputs||[]).map(i=>({name:i.name,type:i.type}));
-              const ftype = (item.stateMutability==="view"||item.stateMutability==="pure") ? "call" : "tx";
-              funcs.push({ name:item.name, inputs, type:ftype, payable: item.stateMutability==="payable" });
-            }
-          });
-        }
-        list.push({ name:k, addr:v.address||v.address||"", funcs });
-      }
-      return list;
-    }
-  } catch(e) { console.warn("load abis failed", e); }
-  return null;
-}
-
-const contractList = loadContractsFromAbisGlobal() || fallbackContracts;
 
 /* ===== UI rendering ===== */
 function buildUI() {
   const grid = document.getElementById("grid");
   grid.innerHTML = "";
-  contractList.forEach(c => {
+  fallbackContracts.forEach(c => {
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `<h3>${c.name}</h3><div style="font-size:13px;opacity:.9">${c.addr}</div><div id="controls-${c.name}"></div><div class="status" id="status-${c.name}"></div>
@@ -110,7 +81,6 @@ function buildUI() {
     (c.funcs||[]).forEach(fn=>{
       const block = document.createElement("div");
       block.style.marginTop = "8px";
-      // inputs
       (fn.inputs||[]).forEach(inp=>{
         const inpEl = document.createElement("input");
         inpEl.placeholder = inp.type.includes("address[]") ? `${inp.name} (comma addresses)` :
@@ -121,13 +91,11 @@ function buildUI() {
         inpEl.type = inp.type.includes("uint") ? "number" : "text";
         block.appendChild(inpEl);
       });
-      // payable amount field
       if (fn.payable) {
         const amt = document.createElement("input");
         amt.placeholder = "ETH amount (e.g. 0.001)";
         amt.id = `${c.name}_${fn.name}_value`;
-        amt.type = "number";
-        amt.step = "0.000000001";
+        amt.type = "number"; amt.step="0.000000001";
         block.appendChild(amt);
       }
       const btn = document.createElement("button");
@@ -143,52 +111,36 @@ function buildUI() {
 /* ===== Connect handling ===== */
 async function connect() {
   try {
-    // prefer extension
     if (window.ethereum) {
       provider = window.ethereum;
       await provider.request({ method: "eth_requestAccounts" });
       web3 = new Web3(provider);
       accounts = await web3.eth.getAccounts();
-      setConnected(accounts[0]);
-      return;
+      setConnected(accounts[0]); return;
     }
-
-    // fallback WalletConnect (UMD v1)
     const WalletConnectProvider = window.WalletConnectProvider.default;
-    provider = new WalletConnectProvider({
-      infuraId: LEGACY_INFURA_ID
-    });
+    provider = new WalletConnectProvider({ infuraId: LEGACY_INFURA_ID });
     await provider.enable();
     web3 = new Web3(provider);
     accounts = await web3.eth.getAccounts();
     setConnected(accounts[0]);
   } catch (err) {
-    console.error("connect error", err);
     alert("Connect failed: " + (err.message||err));
   }
 }
-
 function setConnected(addr) {
   document.getElementById("addr").innerText = addr || "Unknown";
   document.getElementById("chain").style.display = "inline-block";
   document.getElementById("chain").innerText = "Connected";
-  // provider events
-  provider && provider.on && provider.on("accountsChanged",(accs)=> {
-    document.getElementById("addr").innerText = accs[0]||"Not connected";
-  });
 }
-
 document.getElementById("btnConnect").onclick = connect;
 
-/* ===== invoke contract functions (web3) ===== */
+/* ===== invoke contract functions ===== */
 async function invoke(contractObj, fn) {
   const statusEl = document.getElementById(`status-${contractObj.name}`);
   statusEl.innerText = "Processing...";
   try {
     if (!web3) return alert("Connect wallet first!");
-    if (!contractObj.addr) throw new Error("Contract address missing");
-
-    // build minimal ABI for this single function
     const abi = [{
       name: fn.name,
       type: "function",
@@ -196,42 +148,29 @@ async function invoke(contractObj, fn) {
       stateMutability: fn.payable ? "payable" : (fn.type==="call" ? "view" : "nonpayable"),
       outputs: fn.type==="call" ? [{type:"string"}] : []
     }];
-
     const contract = new web3.eth.Contract(abi, contractObj.addr);
-    // prepare args
     const args = (fn.inputs||[]).map(i=>{
       const el = document.getElementById(`${contractObj.name}_${fn.name}_${i.name}`);
-      let v = el ? el.value : "";
-      if (i.type.endsWith("[]")) {
-        // parse comma separated
-        return v ? v.split(",").map(s=>s.trim()) : [];
-      }
-      if (i.type.startsWith("uint")) return v? v.toString() : "0";
+      let v = el? el.value : "";
+      if (i.type.endsWith("[]")) return v? v.split(",").map(s=>s.trim()):[];
+      if (i.type.startsWith("uint")) return v? v.toString():"0";
       return v;
     });
-
-    const from = (accounts && accounts[0]) || (await web3.eth.getAccounts())[0];
-
-    if (fn.type === "call") {
-      const res = await contract.methods[fn.name](...args).call({ from });
+    const from = (accounts&&accounts[0])||(await web3.eth.getAccounts())[0];
+    if (fn.type==="call") {
+      const res = await contract.methods[fn.name](...args).call({from});
       statusEl.innerText = `Result: ${JSON.stringify(res)}`;
     } else {
-      // payable override
-      const valueEl = document.getElementById(`${contractObj.name}_${fn.name}_value`);
-      const value = valueEl && valueEl.value ? web3.utils.toWei(valueEl.value.toString(), "ether") : "0";
-      const tx = await contract.methods[fn.name](...args).send({ from, value });
-      statusEl.innerText = `Tx: ${tx.transactionHash}`;
+      const valueEl=document.getElementById(`${contractObj.name}_${fn.name}_value`);
+      const value=valueEl&&valueEl.value?web3.utils.toWei(valueEl.value.toString(),"ether"):"0";
+      const tx=await contract.methods[fn.name](...args).send({from,value});
+      statusEl.innerText=`Tx: ${tx.transactionHash}`;
     }
-  } catch (err) {
-    console.error("invoke error", err);
-    let message = err && err.message ? err.message : String(err);
-    // common provider message adjustment for clarity
-    if (message.includes("User denied")) message = "User denied signature/tx";
-    statusEl.innerText = `Error: ${message}`;
+  } catch(err) {
+    statusEl.innerText=`Error: ${err.message||err}`;
   }
 }
 
-/* ===== init ===== */
 buildUI();
 </script>
 </body>
